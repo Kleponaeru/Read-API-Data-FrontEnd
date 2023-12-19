@@ -1,0 +1,208 @@
+﻿@page "/"
+
+@inject HttpClient Http
+@using System.Net.Http.Json
+
+<link rel="stylesheet" href="\wwwroot\css\app.css" />
+
+
+<div class="choose-menu">
+    <h2>Choose Menu</h2>
+    <ul>
+        <li><a href="#" @onclick="()=>FetchData(postApi)">POSTS</a></li>
+        <li><a href="#" @onclick="()=>FetchData(commentApi)">COMMENTS</a></li>
+        <li><a href="#" @onclick="()=>FetchData(photoApi)">PHOTOS</a></li>
+        <li><a href="#" @onclick="()=>FetchData(userApi)">USERS</a></li>
+    </ul>
+</div>
+
+@if (IsLoading)
+{
+   <div class="loading-spinner loading-spinner--spin-animation"></div>
+}
+else
+{
+    <div class="photo-container">
+        @foreach (var photo in Photos)
+        {
+            <div class="photo-card card">
+                <img src="@photo.Url" alt="@photo.Title" />
+                <p>@photo.Title</p>
+            </div>
+        }
+    </div>
+
+    @if (Users != null && Users.Any())
+    {
+        <div class="user-container">
+            <h2>Users</h2>
+            <div class="user-cards">
+                @foreach (var user in Users)
+                {
+                    <div class="user-card card">
+                        <h3>@user.Name</h3>
+                        <p>Email: @user.Email</p>
+                        <p>Username: @user.Username</p>
+                        <p>Phone: @user.Phone</p>
+                        <p>Website: @user.Website</p>
+                        <br />
+                        <h4>Address</h4>
+                        <p>Street: @user.Address.Street</p>
+                        <p>Suite: @user.Address.Suite</p>
+                        <p>City: @user.Address.City</p>
+                        <p>Zipcode: @user.Address.Zipcode</p>
+                        <br />
+                        <h4>Geo Location</h4>
+                        <p>Latitude: @user.Address.Geo.Lat</p>
+                        <p>Longitude: @user.Address.Geo.Lng</p>
+                        <br />
+                        <h4>Company</h4>
+                        <p>Company Name: @user.Company.Name</p>
+                        <p>Catchphrase: @user.Company.CatchPhrase</p>
+                        <p>Business: @user.Company.Bs</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (Posts != null && Posts.Any())
+    {
+        <div class="post-container">
+            <h2>Posts</h2>
+            <div class="post-cards">
+                @foreach (var post in Posts)
+                {
+                    <div class="post-card card">
+                        <h3>@post.Title</h3>
+                        <p>@post.Body</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (Comments != null && Comments.Any())
+    {
+        <div class="comment-container">
+            <h2>Comments</h2>
+            <div class="comment-cards">
+                @foreach (var comment in Comments)
+                {
+                    <div class="comment-card card">
+                        <h3>@comment.Name</h3>
+                        <p>@comment.Body</p>
+                        <i>Email: @comment.Email</i>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private bool IsLoading { get; set; }
+    private List<Photo> Photos = new List<Photo>();
+    private List<Post> Posts;
+    private List<Comment> Comments = new List<Comment>();
+    private List<User> Users = new List<User>();
+
+    private async Task FetchData(string apiUrl)
+    {
+        try
+        {
+            IsLoading = true;
+            Users = null;
+            Comments = null;
+            Posts = null;
+            Photos.Clear();
+
+            switch (apiUrl)
+            {
+                case postApi:
+                    Posts = await Http.GetFromJsonAsync<List<Post>>(apiUrl);
+                    break;
+                case commentApi:
+                    Comments = await Http.GetFromJsonAsync<List<Comment>>(apiUrl);
+                    break;
+                case photoApi:
+                    Photos = await Http.GetFromJsonAsync<List<Photo>>(apiUrl);
+                    break;
+                case userApi:
+                    Users = await Http.GetFromJsonAsync<List<User>>(apiUrl);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching data from {apiUrl}: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private class Photo
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string Url { get; set; }
+    }
+
+    private class Post
+    {
+        public int UserId { get; set; }
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string Body { get; set; }
+    }
+
+    private class Comment
+    {
+        public int PostId { get; set; }
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string Body { get; set; }
+    }
+
+    private class User
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Username { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
+        public string Website { get; set; }
+        public Address Address { get; set; }
+        public Company Company { get; set; }
+    }
+
+    private class Company
+    {
+        public string Name { get; set; }
+        public string CatchPhrase { get; set; }
+        public string Bs { get; set; }
+    }
+
+    private class Address
+    {
+        public string Street { get; set; }
+        public string Suite { get; set; }
+        public string City { get; set; }
+        public string Zipcode { get; set; }
+        public Geo Geo { get; set; }
+    }
+
+    private class Geo
+    {
+        public string Lat { get; set; }
+        public string Lng { get; set; }
+    }
+
+    const string postApi = "https://jsonplaceholder.typicode.com/posts";
+    const string commentApi = "https://jsonplaceholder.typicode.com/comments";
+    const string photoApi = "https://jsonplaceholder.typicode.com/photos";
+    const string userApi = "https://jsonplaceholder.typicode.com/users";
+}
